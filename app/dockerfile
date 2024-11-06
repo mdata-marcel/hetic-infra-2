@@ -1,20 +1,39 @@
 # Étape 1 : Choisir l'image de base
-FROM node:14
+# Utilisation de Node.js version 21.7.1 comme image de base
+FROM node:21.7.1
 
-# Étape 2 : Définir le répertoire de travail dans le conteneur
+# Étape 2 : Créer un utilisateur spécifique et définir un répertoire de travail
+# Crée un utilisateur nommé "appuser" pour améliorer la sécurité
+RUN adduser --disabled-password --gecos "" appuser
+
+# Définir le répertoire de travail et ajuster les permissions pour "appuser"
 WORKDIR /app
+RUN chown appuser:appuser /app
 
 # Étape 3 : Copier les fichiers de configuration dans le conteneur
+# Copier uniquement les fichiers package.json et package-lock.json
 COPY package*.json ./
 
-# Étape 4 : Installer les dépendances
+# Étape 4 : Installer les dépendances en tant que root
+# Installation des dépendances de l'application
 RUN npm install
 
-# Étape 5 : Copier le contenu du dossier "app" dans le conteneur
-COPY ./app ./app
+# Étape 5 : Copier tout le contenu de l'application dans le conteneur
+# Copier tous les fichiers de l'application dans le répertoire de travail du conteneur
+COPY . /app
 
-# Étape 6 : Exposer le port sur lequel l'application tourne (ajustez-le si nécessaire)
+# Étape 6 : Changer le propriétaire des fichiers copiés pour l'utilisateur "appuser"
+# Cela garantit que l'utilisateur appuser possède tous les fichiers du répertoire de travail
+RUN chown -R appuser:appuser /app
+
+# Étape 7 : Passer à l'utilisateur "appuser"
+# Exécuter le reste des commandes en tant qu'utilisateur appuser (pas root)
+USER appuser
+
+# Étape 8 : Exposer le port sur lequel l'application tourne (par exemple, 3000)
+# Ceci rend le port 3000 disponible pour les connexions externes
 EXPOSE 3000
 
-# Étape 7 : Commande de démarrage de l'application
+# Étape 9 : Commande de démarrage de l'application
+# Démarrer l'application avec la commande npm start
 CMD ["npm", "start"]
